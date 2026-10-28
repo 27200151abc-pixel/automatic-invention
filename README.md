@@ -2,7 +2,13 @@
 Standalone Arabic RTL English-learning prototype. No Lisanora integration, external scripts, paid APIs, or remote assets.
 
 ## Run locally
-Open `index.html` in a modern browser. Progress is stored locally under `verbasprout-progress`.
+Run a local HTTP server from the repository root (service workers do not work from a `file://` URL):
+
+```bash
+python3 -m http.server 4173
+```
+
+Open `http://127.0.0.1:4173`. Progress is stored locally under `verbasprout-progress`. After the first successful online load, the service worker caches the app shell so the lesson can reopen offline on supported browsers.
 
 ## Current scope
 - Eight short A1 multiple-choice exercises with immediate explanatory feedback.
