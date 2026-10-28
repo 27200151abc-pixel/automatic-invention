@@ -17,15 +17,15 @@ const icon = fs.readFileSync('icon.svg', 'utf8');
 const deploy = fs.readFileSync('.github/workflows/deploy-pages.yml', 'utf8');
 assert.equal(manifest.start_url, './', 'PWA start URL is relative for project pages');
 assert.equal(manifest.scope, './', 'PWA scope is relative for project pages');
-assert.match(manifest.icons[0].src, /icon\\.svg$/, 'local app icon is declared');
-assert.match(html, /rel="manifest" href="\\.\\/manifest\\.webmanifest"/, 'manifest linked from app shell');
-assert.match(html, /serviceWorker\\.register\\('\.\\/sw\\.js'\\)/, 'service worker registration is relative');
-assert.match(worker, /self\\.registration\\.scope/, 'worker caches within its deployed subpath');
-assert.match(worker, /request\\.mode === 'navigate'/, 'worker has offline navigation fallback');
-assert.match(worker, /caches\\.match/, 'worker reads cached shell when offline');
+assert.ok(manifest.icons[0].src.endsWith('icon.svg'), 'local app icon is declared');
+assert.ok(html.includes('rel="manifest" href="./manifest.webmanifest"'), 'manifest linked from app shell');
+assert.ok(html.includes("serviceWorker.register('./sw.js')"), 'service worker registration is relative');
+assert.ok(worker.includes('self.registration.scope'), 'worker caches within its deployed subpath');
+assert.ok(worker.includes("request.mode === 'navigate'"), 'worker has offline navigation fallback');
+assert.ok(worker.includes('caches.match'), 'worker reads cached shell when offline');
 assert.match(icon, /<svg/, 'local SVG icon exists');
 for (const file of ['manifest.webmanifest', 'sw.js', 'icon.svg']) {
-  assert.match(deploy, new RegExp('cp ' + file.replace('.', '\\\\.') + ' _site/' + file.replace('.', '\\\\.' ) + '\\n'), 'Pages deploy includes ' + file);
+  assert.ok(deploy.includes('cp ' + file + ' _site/' + file), 'Pages deploy includes ' + file);
 }
 console.log('PASS: PWA manifest, subpath-safe offline shell, local icon, and Pages deployment assets');
 
