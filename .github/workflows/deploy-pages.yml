@@ -21,6 +21,9 @@ jobs:
           mkdir -p _site
           cp index.html _site/index.html
           cp README.md _site/README.md
+          cp manifest.webmanifest _site/manifest.webmanifest
+          cp sw.js _site/sw.js
+          cp icon.svg _site/icon.svg
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
