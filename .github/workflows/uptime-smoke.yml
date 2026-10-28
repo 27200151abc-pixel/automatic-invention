@@ -1,0 +1,19 @@
+name: Uptime smoke check
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */6 * * *"
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip if SITE_URL is not configured
+        if: ${{ vars.SITE_URL == '' }}
+        run: echo "Set repository variable SITE_URL to enable the smoke check."
+      - name: Check deployed endpoint
+        if: ${{ vars.SITE_URL != '' }}
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: curl --fail --silent --show-error --location --max-time 20 "$SITE_URL" -o /tmp/site.html
