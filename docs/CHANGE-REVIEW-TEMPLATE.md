@@ -1,0 +1,13 @@
+# Learning-content change review
+- Change summary:
+- Target level and descriptor:
+- Learning objective:
+- Reviewer:
+- Correct answer verified:
+- Distractors plausible and unambiguous:
+- Explanation accurate and learner-friendly:
+- Arabic localization reviewed:
+- Accessibility and mobile behavior checked:
+- Tests run and results:
+- Known limitations:
+- Decision: approve / revise / reject
