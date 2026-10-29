@@ -17,6 +17,7 @@
 <section class="panel" aria-labelledby="lesson-title"><div class="row"><span id="step-label" class="muted">الخطوة 1 من 8</span><span id="score-label" class="muted">الإجابات الصحيحة: 0</span></div><div class="progress" role="progressbar" aria-label="تقدم الدرس" aria-valuemin="0" aria-valuemax="8" aria-valuenow="0"><span id="progress"></span></div><h2 id="lesson-title">اختر الإجابة الصحيحة</h2><p id="question"></p><div id="answers" class="answers"></div><p id="feedback" class="feedback" role="status" aria-live="polite"></p><div class="row"><button id="next" class="primary" disabled>التالي</button><button id="reset">إعادة الدرس</button></div></section>
 <section class="panel"><h2>تقدّمك على هذا الجهاز</h2><p id="saved" class="muted">لم تحفظ أي إجابات بعد.</p><p class="small muted">يُحفظ التقدّم محليًا في متصفحك ولا يُرسل إلى خادم.</p></section>
 </main><footer>VerbaSprout · نموذج تعليمي مستقل</footer>
+<script src="./progress-store.js"></script>
 <script>
 (()=>{'use strict';
 const lessons=[
@@ -29,15 +30,19 @@ const lessons=[
 {q:'أكمل: They ___ happy.',a:['is','am','are'],correct:2,why:'نستخدم are مع they.'},
 {q:'ما معنى “Thank you”؟',a:['من فضلك','شكرًا لك','عذرًا'],correct:1,why:'Thank you تُستخدم للتعبير عن الامتنان.'}
 ];
-let index=0,score=0,answered=false;const $=id=>document.getElementById(id);
-function saved(){try{return JSON.parse(localStorage.getItem('verbasprout-progress')||'{}')}catch{return {}}}
-function persist(){const data={step:index,score,completed:index>=lessons.length,updatedAt:new Date().toISOString()};try{localStorage.setItem('verbasprout-progress',JSON.stringify(data))}catch{};renderSaved()}
+const $=id=>document.getElementById(id);
+const progressStore=window.VerbaSproutProgress;
+const STORAGE_KEY=progressStore.STORAGE_KEY;
+function saved(){try{return progressStore.normalize(localStorage.getItem(STORAGE_KEY),lessons.length)}catch{return progressStore.empty()}}
+let state=saved(),index=state.step,score=state.score,answered=state.answered,selected=state.selected;
+function persist(){state={version:2,step:index,score,answered,selected,completed:index>=lessons.length,updatedAt:new Date().toISOString()};try{localStorage.setItem(STORAGE_KEY,progressStore.serialize(state))}catch{};renderSaved()}
 function renderSaved(){const d=saved();$('saved').textContent=d.updatedAt?'آخر حفظ: '+new Date(d.updatedAt).toLocaleString('ar')+' — '+(d.completed?'أكملت الدرس':'الخطوة '+Math.min((d.step||0)+1,lessons.length)+' من 8')+'، النتيجة '+(d.score||0)+'/8':'لم تحفظ أي إجابات بعد.'}
-function render(){answered=false;$('feedback').textContent='';$('next').disabled=true;$('answers').replaceChildren();$('step-label').textContent=index<lessons.length?'الخطوة '+(index+1)+' من '+lessons.length:'اكتمل الدرس';$('score-label').textContent='الإجابات الصحيحة: '+score;$('progress').style.width=(index/lessons.length*100)+'%';document.querySelector('[role=progressbar]').setAttribute('aria-valuenow',index);
+function render(){$('feedback').textContent='';$('next').disabled=!answered;$('answers').replaceChildren();$('step-label').textContent=index<lessons.length?'الخطوة '+(index+1)+' من '+lessons.length:'اكتمل الدرس';$('score-label').textContent='الإجابات الصحيحة: '+score;$('progress').style.width=(index/lessons.length*100)+'%';document.querySelector('[role=progressbar]').setAttribute('aria-valuenow',index);
 if(index>=lessons.length){$('lesson-title').textContent='أحسنت! أكملت الدرس 🎉';$('question').textContent='نتيجتك '+score+' من '+lessons.length+'. أعد الدرس للتدريب مرة أخرى.';$('next').hidden=true;return}
-$('next').hidden=false;const l=lessons[index];$('lesson-title').textContent='تدريب A1';$('question').textContent=l.q;l.a.forEach((a,i)=>{const b=document.createElement('button');b.textContent=a;b.addEventListener('click',()=>choose(i,b));$('answers').append(b)})}
-function choose(choice,button){if(answered)return;answered=true;const l=lessons[index],buttons=[...$('answers').children];buttons.forEach((b,i)=>{b.disabled=true;if(i===l.correct)b.style.borderColor='#27856a'});if(choice===l.correct){score++;$('feedback').textContent='إجابة صحيحة! '+l.why}else{$('feedback').textContent='ليست الإجابة الصحيحة. '+l.why;button.style.borderColor='#c65b50'}$('score-label').textContent='الإجابات الصحيحة: '+score;$('next').disabled=false;persist()}
-$('next').addEventListener('click',()=>{if(!answered)return;index++;persist();render()});$('reset').addEventListener('click',()=>{index=0;score=0;try{localStorage.removeItem('verbasprout-progress')}catch{};renderSaved();render()});renderSaved();render();
+$('next').hidden=false;const l=lessons[index];$('lesson-title').textContent='تدريب A1';$('question').textContent=l.q;l.a.forEach((a,i)=>{const b=document.createElement('button');b.textContent=a;b.addEventListener('click',()=>choose(i,b));$('answers').append(b)});
+if(answered){const buttons=[...$('answers').children];buttons.forEach((b,i)=>{b.disabled=true;if(i===l.correct)b.style.borderColor='#27856a';if(i===selected&&selected!==l.correct)b.style.borderColor='#c65b50'});$('feedback').textContent=selected===l.correct?'إجابة صحيحة! '+l.why:'ليست الإجابة الصحيحة. '+l.why;$('next').disabled=false}}
+function choose(choice,button){if(answered)return;answered=true;selected=choice;const l=lessons[index],buttons=[...$('answers').children];buttons.forEach((b,i)=>{b.disabled=true;if(i===l.correct)b.style.borderColor='#27856a'});if(choice===l.correct){score++;$('feedback').textContent='إجابة صحيحة! '+l.why}else{$('feedback').textContent='ليست الإجابة الصحيحة. '+l.why;button.style.borderColor='#c65b50'}$('score-label').textContent='الإجابات الصحيحة: '+score;$('next').disabled=false;persist()}
+$('next').addEventListener('click',()=>{if(!answered)return;index++;answered=false;selected=null;persist();render()});$('reset').addEventListener('click',()=>{index=0;score=0;answered=false;selected=null;try{localStorage.removeItem(STORAGE_KEY)}catch{};renderSaved();render()});renderSaved();render();
 })();
 </script>
 <script>
