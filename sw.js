@@ -6,7 +6,8 @@ const SHELL = [
   APP_ROOT.href,
   INDEX_URL,
   new URL('manifest.webmanifest', APP_ROOT).href,
-  new URL('icon.svg', APP_ROOT).href
+  new URL('icon.svg', APP_ROOT).href,
+  new URL('progress-store.js', APP_ROOT).href
 ];
 
 self.addEventListener('install', event => {
