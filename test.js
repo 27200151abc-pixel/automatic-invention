@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const progressStore = require('./progress-store.js');
 const html = fs.readFileSync('index.html', 'utf8');
 assert.match(html, /<html lang="ar" dir="rtl">/, 'Arabic RTL document');
-assert.match(html, /verbasprout-progress/, 'local progress persistence');
+assert.equal(progressStore.STORAGE_KEY, 'verbasprout-progress', 'stable local progress storage key');
 assert.match(html, /const lessons=\[/, 'lesson data exists');
 assert.equal((html.match(/\{q:'/g) || []).length, 8, 'eight A1 lesson steps');
 assert.match(html, /role="status"/, 'accessible feedback region');
