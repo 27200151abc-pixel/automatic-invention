@@ -24,6 +24,7 @@ jobs:
           cp manifest.webmanifest _site/manifest.webmanifest
           cp sw.js _site/sw.js
           cp icon.svg _site/icon.svg
+          cp progress-store.js _site/progress-store.js
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
