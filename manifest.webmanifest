@@ -1,0 +1,20 @@
+{
+  "name": "VerbaSprout — تعلّم الإنجليزية",
+  "short_name": "VerbaSprout",
+  "description": "تعلّم الإنجليزية بخطوات قصيرة مع حفظ التقدم محليًا.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#153b35",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -7,4 +7,5 @@ Before each release:
 - [ ] Review Arabic wording, English answer correctness, and explanation quality with a human reviewer.
 - [ ] Confirm no secrets, external trackers, or unexpected network dependencies.
 - [ ] Run browser automation and record its actual result; do not infer success from a configured workflow.
+- [ ] Install/open the PWA over HTTPS or localhost, then verify reload and lesson access with the browser offline; record the browser and result.
 - [ ] Check contrast and semantics with an accessibility audit. This checklist is not a WCAG conformance claim.

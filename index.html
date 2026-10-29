@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="VerbaSprout — تعلّم الإنجليزية خطوة بخطوة مجانًا">
+<meta name="theme-color" content="#153b35">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
 <title>VerbaSprout | تعلّم الإنجليزية</title>
 <style>
 :root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#172033;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}header{background:#153b35;color:#fff;padding:1.2rem max(1rem,calc((100% - 980px)/2))}header h1{margin:0;font-size:1.7rem}header p{margin:.4rem 0 0;color:#d8eee8}.wrap{max-width:980px;margin:1.5rem auto;padding:0 1rem}.hero,.panel{background:white;border:1px solid #dce5e9;border-radius:18px;padding:1.25rem;margin-bottom:1rem;box-shadow:0 5px 22px #203a4b0a}.hero h2{margin-top:0}.levels{display:grid;grid-template-columns:repeat(auto-fit,minmax(85px,1fr));gap:.5rem}.level{padding:.7rem;border:1px solid #cddbdc;border-radius:10px;text-align:center;background:#f8fbfb}.level.active{background:#dff4e8;border-color:#318465;font-weight:700}.muted{color:#5c6b78}.progress{height:8px;background:#e8eef0;border-radius:8px;overflow:hidden;margin:.7rem 0}.progress span{display:block;height:100%;background:#27856a;width:0;transition:width .2s}.answers{display:grid;gap:.65rem;margin:1rem 0}.answers button,button{font:inherit;cursor:pointer;border-radius:10px;padding:.75rem 1rem;border:1px solid #cbd8dc;background:white;color:#172033}.answers button{text-align:right}.answers button:hover,button:hover{border-color:#27856a}.answers button:focus-visible,button:focus-visible{outline:3px solid #8dc9b2;outline-offset:2px}.primary{background:#17644f;color:white;border-color:#17644f}.feedback{min-height:1.5rem;font-weight:600}.row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}.small{font-size:.9rem}footer{text-align:center;color:#687983;padding:1.5rem}
@@ -14,6 +17,7 @@
 <section class="panel" aria-labelledby="lesson-title"><div class="row"><span id="step-label" class="muted">الخطوة 1 من 8</span><span id="score-label" class="muted">الإجابات الصحيحة: 0</span></div><div class="progress" role="progressbar" aria-label="تقدم الدرس" aria-valuemin="0" aria-valuemax="8" aria-valuenow="0"><span id="progress"></span></div><h2 id="lesson-title">اختر الإجابة الصحيحة</h2><p id="question"></p><div id="answers" class="answers"></div><p id="feedback" class="feedback" role="status" aria-live="polite"></p><div class="row"><button id="next" class="primary" disabled>التالي</button><button id="reset">إعادة الدرس</button></div></section>
 <section class="panel"><h2>تقدّمك على هذا الجهاز</h2><p id="saved" class="muted">لم تحفظ أي إجابات بعد.</p><p class="small muted">يُحفظ التقدّم محليًا في متصفحك ولا يُرسل إلى خادم.</p></section>
 </main><footer>VerbaSprout · نموذج تعليمي مستقل</footer>
+<script src="./progress-store.js"></script>
 <script>
 (()=>{'use strict';
 const lessons=[
@@ -26,14 +30,28 @@ const lessons=[
 {q:'أكمل: They ___ happy.',a:['is','am','are'],correct:2,why:'نستخدم are مع they.'},
 {q:'ما معنى “Thank you”؟',a:['من فضلك','شكرًا لك','عذرًا'],correct:1,why:'Thank you تُستخدم للتعبير عن الامتنان.'}
 ];
-let index=0,score=0,answered=false;const $=id=>document.getElementById(id);
-function saved(){try{return JSON.parse(localStorage.getItem('verbasprout-progress')||'{}')}catch{return {}}}
-function persist(){const data={step:index,score,completed:index>=lessons.length,updatedAt:new Date().toISOString()};try{localStorage.setItem('verbasprout-progress',JSON.stringify(data))}catch{};renderSaved()}
+const $=id=>document.getElementById(id);
+const progressStore=window.VerbaSproutProgress;
+const STORAGE_KEY=progressStore.STORAGE_KEY;
+function saved(){try{return progressStore.normalize(localStorage.getItem(STORAGE_KEY),lessons.length)}catch{return progressStore.empty()}}
+let state=saved(),index=state.step,score=state.score,answered=state.answered,selected=state.selected;
+function persist(){state={version:2,step:index,score,answered,selected,completed:index>=lessons.length,updatedAt:new Date().toISOString()};try{localStorage.setItem(STORAGE_KEY,progressStore.serialize(state))}catch{};renderSaved()}
 function renderSaved(){const d=saved();$('saved').textContent=d.updatedAt?'آخر حفظ: '+new Date(d.updatedAt).toLocaleString('ar')+' — '+(d.completed?'أكملت الدرس':'الخطوة '+Math.min((d.step||0)+1,lessons.length)+' من 8')+'، النتيجة '+(d.score||0)+'/8':'لم تحفظ أي إجابات بعد.'}
-function render(){answered=false;$('feedback').textContent='';$('next').disabled=true;$('answers').replaceChildren();$('step-label').textContent=index<lessons.length?'الخطوة '+(index+1)+' من '+lessons.length:'اكتمل الدرس';$('score-label').textContent='الإجابات الصحيحة: '+score;$('progress').style.width=(index/lessons.length*100)+'%';document.querySelector('[role=progressbar]').setAttribute('aria-valuenow',index);
+function render(){$('feedback').textContent='';$('next').disabled=!answered;$('answers').replaceChildren();$('step-label').textContent=index<lessons.length?'الخطوة '+(index+1)+' من '+lessons.length:'اكتمل الدرس';$('score-label').textContent='الإجابات الصحيحة: '+score;$('progress').style.width=(index/lessons.length*100)+'%';document.querySelector('[role=progressbar]').setAttribute('aria-valuenow',index);
 if(index>=lessons.length){$('lesson-title').textContent='أحسنت! أكملت الدرس 🎉';$('question').textContent='نتيجتك '+score+' من '+lessons.length+'. أعد الدرس للتدريب مرة أخرى.';$('next').hidden=true;return}
-$('next').hidden=false;const l=lessons[index];$('lesson-title').textContent='تدريب A1';$('question').textContent=l.q;l.a.forEach((a,i)=>{const b=document.createElement('button');b.textContent=a;b.addEventListener('click',()=>choose(i,b));$('answers').append(b)})}
-function choose(choice,button){if(answered)return;answered=true;const l=lessons[index],buttons=[...$('answers').children];buttons.forEach((b,i)=>{b.disabled=true;if(i===l.correct)b.style.borderColor='#27856a'});if(choice===l.correct){score++;$('feedback').textContent='إجابة صحيحة! '+l.why}else{$('feedback').textContent='ليست الإجابة الصحيحة. '+l.why;button.style.borderColor='#c65b50'}$('score-label').textContent='الإجابات الصحيحة: '+score;$('next').disabled=false;persist()}
-$('next').addEventListener('click',()=>{if(!answered)return;index++;persist();render()});$('reset').addEventListener('click',()=>{index=0;score=0;try{localStorage.removeItem('verbasprout-progress')}catch{};renderSaved();render()});renderSaved();render();
+$('next').hidden=false;const l=lessons[index];$('lesson-title').textContent='تدريب A1';$('question').textContent=l.q;l.a.forEach((a,i)=>{const b=document.createElement('button');b.textContent=a;b.addEventListener('click',()=>choose(i,b));$('answers').append(b)});
+if(answered){const buttons=[...$('answers').children];buttons.forEach((b,i)=>{b.disabled=true;if(i===l.correct)b.style.borderColor='#27856a';if(i===selected&&selected!==l.correct)b.style.borderColor='#c65b50'});$('feedback').textContent=selected===l.correct?'إجابة صحيحة! '+l.why:'ليست الإجابة الصحيحة. '+l.why;$('next').disabled=false}}
+function choose(choice,button){if(answered)return;answered=true;selected=choice;const l=lessons[index],buttons=[...$('answers').children];buttons.forEach((b,i)=>{b.disabled=true;if(i===l.correct)b.style.borderColor='#27856a'});if(choice===l.correct){score++;$('feedback').textContent='إجابة صحيحة! '+l.why}else{$('feedback').textContent='ليست الإجابة الصحيحة. '+l.why;button.style.borderColor='#c65b50'}$('score-label').textContent='الإجابات الصحيحة: '+score;$('next').disabled=false;persist()}
+$('next').addEventListener('click',()=>{if(!answered)return;index++;answered=false;selected=null;persist();render()});$('reset').addEventListener('click',()=>{index=0;score=0;answered=false;selected=null;try{localStorage.removeItem(STORAGE_KEY)}catch{};renderSaved();render()});renderSaved();render();
 })();
-</script></body></html>
+</script>
+<script>
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname))) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {
+      // Offline support is progressive enhancement; never interrupt the lesson.
+    });
+  }, { once: true });
+}
+</script>
+</body></html>
