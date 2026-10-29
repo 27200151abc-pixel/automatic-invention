@@ -10,4 +10,7 @@ assert.match(html, /role="status"/, 'accessible feedback region');
 assert.match(html, /@media|auto-fit/, 'responsive layout');
 assert.doesNotMatch(html, /<script[^>]+src=/i, 'no external script dependencies');
 assert.doesNotMatch(html, /lisanora/i, 'no Lisanora integration');
-console.log('PASS: Arabic RTL, local persistence, 8 A1 steps, accessible feedback, responsive layout, standalone source');
+assert.match(html, /initial\.answered===true/, 'restores an answered question after reload');
+assert.match(html, /selectedChoice/, 'persists the selected answer');
+assert.match(html, /if\(!restoring\)score\+\+/, 'restoring a correct answer does not double-count it');
+console.log('PASS: RTL, local persistence and resume state, 8 A1 steps, accessible feedback, responsive layout, standalone source');
