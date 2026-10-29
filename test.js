@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('node:fs');
 const assert = require('node:assert/strict');
+const progressStore = require('./progress-store.js');
 const html = fs.readFileSync('index.html', 'utf8');
 assert.match(html, /<html lang="ar" dir="rtl">/, 'Arabic RTL document');
 assert.match(html, /verbasprout-progress/, 'local progress persistence');
@@ -8,7 +9,9 @@ assert.match(html, /const lessons=\[/, 'lesson data exists');
 assert.equal((html.match(/\{q:'/g) || []).length, 8, 'eight A1 lesson steps');
 assert.match(html, /role="status"/, 'accessible feedback region');
 assert.match(html, /@media|auto-fit/, 'responsive layout');
-assert.doesNotMatch(html, /<script[^>]+src=/i, 'no external script dependencies');
+assert.ok(html.includes('<script src="./progress-store.js"></script>'), 'progress module is loaded from the same origin');
+assert.doesNotMatch(html, /<script[^>]+src=["']https?:\/\//i, 'no remote script dependencies');
+assert.match(html, /let state=saved\(\),index=state\.step,score=state\.score,answered=state\.answered,selected=state\.selected;/, 'saved answer state is restored on reload');
 assert.doesNotMatch(html, /lisanora/i, 'no Lisanora integration');
 
 const manifest = JSON.parse(fs.readFileSync('manifest.webmanifest', 'utf8'));
@@ -27,9 +30,22 @@ assert.ok(worker.includes('self.registration.scope'), 'worker caches within its 
 assert.ok(worker.includes("request.mode === 'navigate'"), 'worker has offline navigation fallback');
 assert.ok(worker.includes('caches.match'), 'worker reads cached shell when offline');
 assert.match(icon, /<svg/, 'local SVG icon exists');
-for (const file of ['manifest.webmanifest', 'sw.js', 'icon.svg']) {
+for (const file of ['manifest.webmanifest', 'sw.js', 'icon.svg', 'progress-store.js']) {
   assert.ok(deploy.includes('cp ' + file + ' _site/' + file), 'Pages deploy includes ' + file);
 }
 console.log('PASS: PWA manifest, subpath-safe offline shell, local icon, and Pages deployment assets');
 
+const fresh = progressStore.normalize(null, 8);
+assert.deepEqual(fresh, { version: 2, step: 0, score: 0, answered: false, selected: null, completed: false, updatedAt: null });
+const answeredState = { version: 2, step: 2, score: 1, answered: true, selected: 0, completed: false, updatedAt: '2026-10-29T00:00:00.000Z' };
+assert.deepEqual(progressStore.normalize(progressStore.serialize(answeredState), 8), answeredState, 'answered question survives reload');
+const legacy = progressStore.normalize(JSON.stringify({ step: 3, score: 2, completed: false, updatedAt: '2026-10-28T00:00:00.000Z' }), 8);
+assert.equal(legacy.step, 3, 'legacy step is retained');
+assert.equal(legacy.score, 2, 'legacy score is retained');
+assert.equal(legacy.answered, false, 'legacy state migrates without inventing an answer');
+assert.deepEqual(progressStore.normalize('{bad json', 8), fresh, 'corrupt saved data falls back safely');
+assert.deepEqual(progressStore.normalize(JSON.stringify({ version: 2, step: 99, score: 0, answered: false, selected: null }), 8), fresh, 'out-of-range state is rejected');
+assert.ok(worker.includes("new URL('progress-store.js', APP_ROOT).href"), 'progress module is precached for offline use');
+assert.ok(deploy.includes('cp progress-store.js _site/progress-store.js'), 'Pages artifact includes progress module');
+console.log('PASS: progress restoration, legacy migration, corrupt/out-of-range data handling');
 console.log('PASS: Arabic RTL, local persistence, 8 A1 steps, accessible feedback, responsive layout, standalone source');
