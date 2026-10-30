@@ -4,7 +4,7 @@ const date = new Date().toISOString().slice(0, 10);
 const report = `# Weekly prototype review — ${date}
 
 ## Automated checks
-- Static test command: `npm test`
+- Static test command: \`npm test\`
 - Source: standalone Arabic RTL HTML prototype.
 - Learning content: eight illustrative A1 items.
 - Persistence: browser localStorage; no server sync.
