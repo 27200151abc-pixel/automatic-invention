@@ -3,5 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "description": "Standalone Arabic RTL English learning prototype",
-  "scripts": { "test": "node test.js", "review:weekly": "node scripts/weekly-review.js" }
+  "scripts": {
+    "test": "node test.js",
+    "review:weekly": "node scripts/weekly-review.js",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.0"
+  }
 }
