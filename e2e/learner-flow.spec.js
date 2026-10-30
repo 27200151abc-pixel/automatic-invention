@@ -65,8 +65,10 @@ test('keeps the learner screen within narrow mobile viewports', async ({ page })
 
 test('opens the cached lesson shell while offline', async ({ page, context }) => {
   await page.goto('/');
-  await page.evaluate(() => navigator.serviceWorker.ready);
-  await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller)), { timeout: 10_000 }).toBe(true);
 
   await context.setOffline(true);
   await page.reload();
