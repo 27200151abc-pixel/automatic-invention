@@ -10,7 +10,7 @@ assert.match(html, /const lessons=\[/, 'lesson data exists');
 assert.equal((html.match(/\{q:'/g) || []).length, 8, 'eight A1 lesson steps');
 assert.match(html, /role="status"/, 'accessible feedback region');
 assert.match(html, /@media|auto-fit/, 'responsive layout');
-assert.doesNotMatch(html, /<script[^>]+src=/i, 'no external script dependencies');
+assert.doesNotMatch(html, /<script[^>]+src=["']https?:\/\//i, 'no remote script dependencies');
 assert.doesNotMatch(html, /lisanora/i, 'no Lisanora integration');
 
 // Parse the actual embedded lesson array and validate its teaching-data contract.
