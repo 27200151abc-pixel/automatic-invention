@@ -13,6 +13,9 @@ assert.ok(html.includes('<script src="./progress-store.js"></script>'), 'progres
 assert.doesNotMatch(html, /<script[^>]+src=["']https?:\/\//i, 'no remote script dependencies');
 assert.match(html, /let state=saved\(\),index=state\.step,score=state\.score,answered=state\.answered,selected=state\.selected;/, 'saved answer state is restored on reload');
 assert.doesNotMatch(html, /lisanora/i, 'no Lisanora integration');
+assert.match(html, /aria-disabled/, 'answered choices expose their disabled state accessibly');
+assert.match(html, /tabIndex=i===selected\?0:-1/, 'keyboard focus moves from the selected answer to Next');
+assert.match(html, /الإجابة الصحيحة:/, 'incorrect-answer feedback names the correct choice');
 
 const manifest = JSON.parse(fs.readFileSync('manifest.webmanifest', 'utf8'));
 const worker = fs.readFileSync('sw.js', 'utf8');
