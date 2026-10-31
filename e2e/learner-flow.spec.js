@@ -33,9 +33,33 @@ test('restores incorrect-answer feedback after reload', async ({ page }) => {
   await page.reload();
 
   await expect(page.locator('#feedback')).toContainText('ليست الإجابة الصحيحة');
-  await expect(page.getByRole('button', { name: 'إلى اللقاء' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'إلى اللقاء' })).toHaveAttribute('aria-disabled', 'true');
   await expect(page.getByRole('button', { name: 'التالي' })).toBeEnabled();
   await expect(page.locator('#score-label')).toContainText('0');
+});
+
+test('supports keyboard answer selection and a predictable focus path', async ({ page }) => {
+  await page.goto('/');
+  const correct = page.getByRole('button', { name: 'مرحبًا' });
+  await correct.focus();
+  await page.keyboard.press('Enter');
+
+  await expect(correct).toHaveAttribute('aria-disabled', 'true');
+  await expect(correct).toContainText('إجابتك صحيحة');
+  await expect(correct).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'التالي' })).toBeFocused();
+});
+
+test('announces the correct choice after an incorrect keyboard answer', async ({ page }) => {
+  await page.goto('/');
+  const incorrect = page.getByRole('button', { name: 'إلى اللقاء' });
+  await incorrect.focus();
+  await page.keyboard.press('Space');
+
+  await expect(page.locator('#feedback')).toContainText('الإجابة الصحيحة: مرحبًا');
+  await expect(incorrect).toHaveAttribute('aria-disabled', 'true');
+  await expect(page.getByRole('button', { name: /الإجابة الصحيحة/ })).toContainText('الإجابة الصحيحة');
 });
 
 test('reset clears the saved lesson and score', async ({ page }) => {
