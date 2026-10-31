@@ -3,7 +3,7 @@
 ## Current CI scope on `main`
 The `.github/workflows/ci.yml` workflow runs `npm test` and `npm run review:weekly` on pushes and pull requests. These are static/source checks and a documentation refresh; they do not exercise the app in a browser.
 
-Playwright browser coverage, progress-state validation, and the offline-ready PWA shell are proposed in [PR #1](https://github.com/27200151abc-pixel/automatic-invention/pull/1). Its latest reported CI run is run #59, with both `static-checks` and `browser-tests` completed successfully. That branch is still separate from `main`, is 28 commits ahead and 2 behind, and GitHub reported it as not mergeable during this review. Do not treat PR checks as checks on `main`.
+Playwright browser coverage, progress-state validation, and the offline-ready PWA shell are proposed in [PR #1](https://github.com/27200151abc-pixel/automatic-invention/pull/1). Its latest verified CI run in this review is run #59, with both `static-checks` and `browser-tests` completed successfully. That branch is still separate from `main` and has diverged from it; synchronize it safely and rerun CI before considering merge. Do not treat PR checks as checks on `main`.
 
 ## Free static deployment
 The repository is public and contains a static `index.html`; GitHub Pages is a suitable free static-hosting option.
