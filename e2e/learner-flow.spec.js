@@ -105,7 +105,7 @@ test('reviews recorded wrong answers after completion without adding points', as
   await expect(page.locator('#score-label')).toContainText('7');
 });
 
-test('keeps the learner screen within narrow mobile viewports', async ({ page }) =>
+test('keeps the learner screen within narrow mobile viewports', async ({ page }) => {
   await page.goto('/');
 
   for (const width of [320, 390]) {
