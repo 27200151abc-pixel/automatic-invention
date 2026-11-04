@@ -96,6 +96,9 @@ test('reviews recorded wrong answers after completion without adding points', as
   await expect(page.locator('#review-list')).toContainText('Hello هي تحية تُستخدم عند اللقاء.');
   await expect(page.locator('#review-summary')).toContainText('المراجعة لا تضيف نقاطًا');
   await expect(page.locator('#score-label')).toContainText('7');
+  const persisted = await page.evaluate(() => JSON.parse(localStorage.getItem('verbasprout-progress')));
+  expect(persisted.version).toBe(3);
+  expect(persisted.mistakes).toEqual([{ questionId: 'a1-hello-meaning', selected: 1 }]);
 
   await page.reload();
   await expect(reviewButton).toBeVisible();
@@ -103,6 +106,26 @@ test('reviews recorded wrong answers after completion without adding points', as
   await expect(page.locator('#review-list .review-item')).toHaveCount(1);
   await expect(page.locator('#review-list')).toContainText('إجابتك: إلى اللقاء');
   await expect(page.locator('#score-label')).toContainText('7');
+});
+
+test('migrates index-based saved mistakes to stable lesson IDs', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.setItem('verbasprout-progress', JSON.stringify({
+    version: 2,
+    step: 0,
+    score: 0,
+    answered: false,
+    selected: null,
+    mistakes: [{ questionIndex: 0, selected: 1 }],
+    completed: false,
+    updatedAt: '2026-10-28T00:00:00.000Z'
+  })));
+  await page.reload();
+
+  const migrated = await page.evaluate(() => JSON.parse(localStorage.getItem('verbasprout-progress')));
+  expect(migrated.version).toBe(3);
+  expect(migrated.questionId).toBe('a1-hello-meaning');
+  expect(migrated.mistakes).toEqual([{ questionId: 'a1-hello-meaning', selected: 1 }]);
 });
 
 test('keeps the learner screen within narrow mobile viewports', async ({ page }) => {
