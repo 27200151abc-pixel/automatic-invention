@@ -19,6 +19,7 @@ assert.doesNotMatch(html, /<script[^>]+src=["']https?:\/\//i, 'no remote script 
 assert.match(html, /let state=saved\(\),index=state\.step,score=state\.score,answered=state\.answered,selected=state\.selected,mistakes=state\.mistakes\.slice\(\);/, 'saved answer and mistake state are restored on reload');
 assert.match(html, /mistakes.push\(\{questionId:l\.id,selected:choice\}\)/, 'mistakes are stored by stable lesson ID');
 assert.match(html, /lessons.findIndex\(item=>item.id===mistake.questionId\)/, 'review resolves mistakes by stable lesson ID');
+assert.match(html, /migrateStoredProgress\(\);renderSaved\(\);render\(\);/, 'legacy progress is persisted after migration');
 assert.doesNotMatch(html, /lisanora/i, 'no Lisanora integration');
 assert.match(html, /aria-disabled/, 'answered choices expose their disabled state accessibly');
 assert.match(html, /tabIndex=i===selected\?0:-1/, 'keyboard focus moves from the selected answer to Next');
