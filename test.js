@@ -15,7 +15,7 @@ assert.doesNotMatch(html, /lisanora/i, 'no Lisanora integration');
 
 const lessonMatch = html.match(/const lessons=(\[[\s\S]*?\]);([\s\S]*?)\nlet index=0/);
 assert.ok(lessonMatch, 'lesson data and per-item metadata are present');
-const lessons = vm.runInNewContext(lessonMatch[1] + lessonMatch[2] + '\nlessons;');
+const lessons = vm.runInNewContext('const lessons=' + lessonMatch[1] + lessonMatch[2] + '\nlessons;');
 assert.equal(lessons.length, 8, 'eight lesson records are parsed');
 for (const [index, lesson] of lessons.entries()) {
   assert.ok(Array.isArray(lesson.whyNot), 'lesson ' + (index + 1) + ' has distractor explanations');
