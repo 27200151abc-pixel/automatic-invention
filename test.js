@@ -11,7 +11,7 @@ assert.match(html, /id="review-practice"/, 'interactive mistake retry panel exis
 assert.match(html, /function answerReviewPractice\(questionId,choice\)/, 'review retry has a dedicated answer handler');
 assert.match(html, /mistakes=mistakes\.filter\(mistake=>mistake\.questionId!==questionId\)/, 'a correct retry clears only that recorded mistake');
 assert.match(html, /نتيجتك الأصلية لم تتغير/, 'review retries do not rewrite the original score');
-assert.match(html, /المراجعة لا تضيف نقاطًا/, 'review mode does not award points');
+assert.match(html, /التدريب لا يضيف نقاطًا/, 'review retry does not award points');
 assert.match(html, /const lessons=\[/, 'lesson data exists');
 const lessonIds = [...html.matchAll(/\{id:'([^']+)',q:'/g)].map(match => match[1]);
 assert.equal(lessonIds.length, 8, 'eight A1 lesson steps');
