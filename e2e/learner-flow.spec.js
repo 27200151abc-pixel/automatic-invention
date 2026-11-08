@@ -73,6 +73,76 @@ test('reset clears the saved lesson and score', async ({ page }) => {
   await expect(page.locator('#saved')).toContainText('لم تحفظ أي إجابات');
 });
 
+test('lets learners retry missed questions without changing the original score', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'إلى اللقاء', exact: true }).click();
+  await page.getByRole('button', { name: 'التالي', exact: true }).click();
+
+  for (const answer of ['am', 'books', 'drinks', 'small', 'an', 'are', 'شكرًا لك']) {
+    await page.getByRole('button', { name: answer, exact: true }).click();
+    await page.getByRole('button', { name: 'التالي', exact: true }).click();
+  }
+
+  await expect(page.locator('#lesson-title')).toContainText('أحسنت');
+  await expect(page.locator('#score-label')).toContainText('7');
+  const reviewButton = page.getByRole('button', { name: 'مراجعة أخطائي', exact: true });
+  await expect(reviewButton).toBeVisible();
+  await reviewButton.click();
+  await expect(page.locator('#review-panel')).toBeVisible();
+  await expect(page.locator('#review-list .review-item')).toHaveCount(1);
+  await expect(page.locator('#review-list')).toContainText('ما معنى “Hello”؟');
+  await expect(page.locator('#review-list')).toContainText('إجابتك: إلى اللقاء');
+  await expect(page.locator('#review-list')).toContainText('الإجابة الصحيحة: مرحبًا');
+  await expect(page.locator('#review-summary')).toContainText('التدريب لا يضيف نقاطًا');
+
+  await page.getByRole('button', { name: 'تدرّب على السؤال', exact: true }).click();
+  await expect(page.locator('#review-practice')).toBeVisible();
+  await page.getByRole('button', { name: 'شكرًا', exact: true }).click();
+  await expect(page.locator('#review-practice-feedback')).toContainText('الإجابة الصحيحة: مرحبًا');
+  await expect(page.locator('#review-list .review-item')).toHaveCount(1);
+  await expect(page.locator('#score-label')).toContainText('7');
+  let persisted = await page.evaluate(() => JSON.parse(localStorage.getItem('verbasprout-progress')));
+  expect(persisted.mistakes).toEqual([{ questionId: 'a1-hello-meaning', selected: 2 }]);
+
+  await page.reload();
+  await expect(reviewButton).toBeVisible();
+  await reviewButton.click();
+  await expect(page.locator('#review-list')).toContainText('إجابتك: شكرًا');
+  await page.getByRole('button', { name: 'تدرّب على السؤال', exact: true }).click();
+  await page.getByRole('button', { name: 'مرحبًا', exact: true }).click();
+
+  await expect(page.locator('#review-practice-feedback')).toContainText('تمت إزالة السؤال من قائمة الأخطاء');
+  await expect(page.locator('#review-list .review-item')).toHaveCount(0);
+  await expect(page.locator('#review-summary')).toContainText('لا توجد أخطاء مسجلة');
+  await expect(page.locator('#score-label')).toContainText('7');
+  persisted = await page.evaluate(() => JSON.parse(localStorage.getItem('verbasprout-progress')));
+  expect(persisted.mistakes).toEqual([]);
+
+  await page.reload();
+  await expect(page.locator('#score-label')).toContainText('7');
+  await expect(reviewButton).toBeHidden();
+});
+ 
+test('migrates index-based saved mistakes to stable lesson IDs', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.setItem('verbasprout-progress', JSON.stringify({
+    version: 2,
+    step: 0,
+    score: 0,
+    answered: false,
+    selected: null,
+    mistakes: [{ questionIndex: 0, selected: 1 }],
+    completed: false,
+    updatedAt: '2026-10-28T00:00:00.000Z'
+  })));
+  await page.reload();
+
+  const migrated = await page.evaluate(() => JSON.parse(localStorage.getItem('verbasprout-progress')));
+  expect(migrated.version).toBe(3);
+  expect(migrated.questionId).toBe('a1-hello-meaning');
+  expect(migrated.mistakes).toEqual([{ questionId: 'a1-hello-meaning', selected: 1 }]);
+});
+
 test('keeps the learner screen within narrow mobile viewports', async ({ page }) => {
   await page.goto('/');
 
