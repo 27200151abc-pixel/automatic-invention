@@ -57,7 +57,7 @@ function boot(storage) {
     createElement() { return new FakeElement(); },
     querySelector() { return progressbar; }
   };
-  const script = html.match(/<script>([\\s\\S]*?)<\\/script>/);
+  const script = html.match(/<script>([\s\S]*?)<\/script>/);
   assert.ok(script, 'inline application script exists');
   vm.runInNewContext(script[1], { document, localStorage: storage, Date, JSON, Number, String });
   return { elements, progressbar };
