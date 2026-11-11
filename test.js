@@ -91,7 +91,7 @@ assert.match(elements.get('score-label').textContent, /0/, 'confirm resets the s
 // Exercise the compatibility path used when HTMLDialogElement.showModal is unavailable.
 FakeElement.prototype.showModal = undefined;
 const fallbackElements = new Map();
-for (const match of html.matchAll(/\\bid="([^"]+)"/g)) fallbackElements.set(match[1], new FakeElement(match[1]));
+for (const match of html.matchAll(/\bid="([^"]+)"/g)) fallbackElements.set(match[1], new FakeElement(match[1]));
 const fallbackProgressbar = new FakeElement('progressbar');
 const fallbackDocument = {
   getElementById: id => fallbackElements.get(id),
