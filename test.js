@@ -88,4 +88,38 @@ assert.equal(values.has(key), false, 'confirm removes saved progress');
 assert.match(elements.get('question').textContent, /Hello/, 'confirm returns to the first question');
 assert.match(elements.get('score-label').textContent, /0/, 'confirm resets the score');
 
-console.log('PASS: Arabic RTL, standalone A1 lesson, accessible reset dialog, cancel preserves progress, confirm resets saved progress and score');
+// Exercise the compatibility path used when HTMLDialogElement.showModal is unavailable.
+FakeElement.prototype.showModal = undefined;
+const fallbackElements = new Map();
+for (const match of html.matchAll(/\\bid="([^"]+)"/g)) fallbackElements.set(match[1], new FakeElement(match[1]));
+const fallbackProgressbar = new FakeElement('progressbar');
+const fallbackDocument = {
+  getElementById: id => fallbackElements.get(id),
+  querySelector: selector => selector === '[role=progressbar]' ? fallbackProgressbar : null,
+  createElement: tag => new FakeElement(tag)
+};
+const fallbackValues = new Map();
+const fallbackStorage = {
+  getItem: key => fallbackValues.has(key) ? fallbackValues.get(key) : null,
+  setItem: (key, value) => fallbackValues.set(key, String(value)),
+  removeItem: key => fallbackValues.delete(key)
+};
+const confirmationChoices = [false, true];
+vm.runInNewContext(scriptMatch[1], {
+  document: fallbackDocument,
+  localStorage: fallbackStorage,
+  Date,
+  console,
+  window: { confirm: () => confirmationChoices.shift() }
+});
+fallbackElements.get('answers').children[0].click();
+fallbackElements.get('next').click();
+const fallbackSaved = fallbackValues.get(key);
+fallbackElements.get('reset').click();
+assert.equal(fallbackValues.get(key), fallbackSaved, 'fallback cancellation preserves progress');
+assert.match(fallbackElements.get('step-label').textContent, /2/, 'fallback cancellation keeps the current step');
+fallbackElements.get('reset').click();
+assert.equal(fallbackValues.has(key), false, 'fallback confirmation clears progress');
+assert.match(fallbackElements.get('question').textContent, /Hello/, 'fallback confirmation resets the lesson');
+
+console.log('PASS: Arabic RTL, standalone A1 lesson, native dialog cancel/confirm, saved-progress safety, and window.confirm fallback');
