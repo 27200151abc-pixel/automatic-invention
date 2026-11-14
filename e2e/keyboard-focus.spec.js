@@ -55,3 +55,13 @@ test('keyboard activation follows the same focus order', async ({ page }) => {
   await expect(page.locator('#question')).toBeFocused();
   await expect(page.locator('#question')).toContainText('I ___ a student');
 });
+
+test('respects the operating-system reduced-motion preference for the progress indicator', async ({ page }) => {
+  await page.goto('/');
+
+  const progress = page.locator('#progress');
+  await expect.poll(() => progress.evaluate(element => getComputedStyle(element).transitionDuration)).toBe('0.2s');
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect.poll(() => progress.evaluate(element => getComputedStyle(element).transitionDuration)).toBe('0s');
+});
