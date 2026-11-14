@@ -10,6 +10,7 @@ assert.match(html, /const lessons=\[/, 'lesson data exists');
 assert.equal((html.match(/\{q:'/g) || []).length, 8, 'eight A1 lesson steps');
 assert.match(html, /role="status"/, 'accessible feedback region');
 assert.match(html, /@media|auto-fit/, 'responsive layout');
+assert.match(html, /@media\\s*\\(prefers-reduced-motion:\\s*reduce\\)/, 'progress animation respects reduced-motion preference');
 assert.match(html, /id="lesson-title" tabindex="-1"/, 'completion heading can receive programmatic focus');
 assert.match(html, /id="question" tabindex="-1"/, 'question prompt can receive programmatic focus');
 assert.doesNotMatch(html, /<script[^>]+src=/i, 'no external script dependencies');
