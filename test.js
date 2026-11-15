@@ -35,4 +35,13 @@ lessons.forEach((lesson, index) => {
   normalizedQuestions.add(normalizedQuestion);
 });
 
+
+// Focused editorial regression for the beginner plural item.
+// These assertions protect this reviewed example; they are not a general grammar or CEFR certification.
+assert.equal(lessons[2].q, 'ما جمع كلمة “book”؟', 'the target item asks for the plural of book');
+assert.deepEqual(Array.from(lessons[2].a), ['bookes', 'books', 'book'], 'the options distinguish the target form from a misspelling and the singular');
+assert.equal(lessons[2].correct, 1, 'books is the correct plural form');
+assert.match(lessons[2].why, /book → books/, 'the explanation shows the singular-to-plural transformation');
+assert.match(lessons[2].why, /bookes تهجئة غير صحيحة/, 'the explanation identifies the misspelling');
+
 console.log(`PASS: RTL, local persistence, ${lessons.length} lesson items, accessible feedback, responsive layout, standalone source, and lesson-content structure`);
