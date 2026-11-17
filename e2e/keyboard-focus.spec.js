@@ -65,3 +65,16 @@ test('respects the operating-system reduced-motion preference for the progress i
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect.poll(() => progress.evaluate(element => getComputedStyle(element).transitionDuration)).toBe('0s');
 });
+
+test('first Tab reveals the skip link and Enter moves focus to the lesson', async ({ page }) => {
+  await page.goto('/');
+
+  await page.keyboard.press('Tab');
+  const skipLink = page.getByRole('link', { name: 'انتقل مباشرة إلى الدرس' });
+  await expect(skipLink).toBeFocused();
+  await expect(skipLink).toBeInViewport();
+
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#lesson')).toBeFocused();
+  await expect(page.locator('#question')).toBeInViewport();
+});
