@@ -5,9 +5,9 @@ const assert = require('node:assert/strict');
 const html = fs.readFileSync('index.html', 'utf8');
 
 assert.match(html, /<html lang="ar" dir="rtl">/, 'Arabic RTL document');
-assert.match(html, /<body><a class="skip-link" href="#lesson">انتقل مباشرة إلى الدرس<\\/a><header>/, 'skip link is the first focusable control');
+assert.ok(html.includes('<body><a class="skip-link" href="#lesson">انتقل مباشرة إلى الدرس</a><header>'), 'skip link is the first focusable control');
 assert.match(html, /<section id="lesson" class="panel" tabindex="-1" aria-labelledby="lesson-title">/, 'skip-link target can receive programmatic focus');
-assert.match(html, /\\.skip-link:focus\\{[^}]*transform:translateY\\(0\\)/, 'skip link becomes visible when focused');
+assert.ok(html.includes('.skip-link:focus{transform:translateY(0)'), 'skip link becomes visible when focused');
 assert.match(html, /verbasprout-progress/, 'local progress persistence');
 assert.match(html, /const lessons=\[/, 'lesson data exists');
 assert.equal((html.match(/\{q:'/g) || []).length, 8, 'eight A1 lesson steps');
