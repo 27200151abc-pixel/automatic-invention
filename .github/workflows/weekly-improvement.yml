@@ -15,8 +15,16 @@ jobs:
         with:
           node-version: 20
       - run: npm run review:weekly
+      - name: Preserve weekly review report
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-review-${{ github.run_id }}
+          path: docs/weekly-review-latest.md
+          retention-days: 14
       - name: Open review PR
+        id: open-pr
         uses: peter-evans/create-pull-request@v6
+        continue-on-error: true
         with:
           branch: automation/weekly-review
           delete-branch: true
@@ -24,3 +32,22 @@ jobs:
           commit-message: "docs: refresh weekly review"
           body: "Documentation-only review queue. No lesson content is changed automatically."
           add-paths: docs/weekly-review-latest.md
+      - name: Explain report fallback when PR creation is blocked
+        if: steps.open-pr.outcome == 'failure'
+        run: |
+          {
+            echo "## Weekly review report saved"
+            echo ""
+            echo "Automatic pull-request creation failed, but the generated report was uploaded as a workflow artifact."
+            echo "Download the artifact named weekly-review-${{ github.run_id }} from this run."
+            echo ""
+            echo "Repository settings may need to allow GitHub Actions to create and approve pull requests."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Report PR result
+        if: steps.open-pr.outcome == 'success'
+        run: |
+          {
+            echo "## Weekly review PR step"
+            echo ""
+            echo "The pull-request action completed successfully. Check its output above for whether a PR was created or updated."
+          } >> "$GITHUB_STEP_SUMMARY"
