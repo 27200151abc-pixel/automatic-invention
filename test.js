@@ -10,4 +10,14 @@ assert.match(html, /role="status"/, 'accessible feedback region');
 assert.match(html, /@media|auto-fit/, 'responsive layout');
 assert.doesNotMatch(html, /<script[^>]+src=/i, 'no external script dependencies');
 assert.doesNotMatch(html, /lisanora/i, 'no Lisanora integration');
-console.log('PASS: Arabic RTL, local persistence, 8 A1 steps, accessible feedback, responsive layout, standalone source');
+
+// The weekly report must remain downloadable when GitHub blocks PR creation.
+const weeklyWorkflow = fs.readFileSync('.github/workflows/weekly-improvement.yml', 'utf8');
+assert.match(weeklyWorkflow, /uses:\s*actions\/upload-artifact@v4/, 'weekly report artifact upload is configured');
+assert.match(weeklyWorkflow, /path:\s*docs\/weekly-review-latest\.md/, 'the generated report is uploaded');
+assert.match(weeklyWorkflow, /retention-days:\s*14/, 'artifact retention is bounded');
+assert.match(weeklyWorkflow, /name: Open review PR[\s\S]*id: open-pr[\s\S]*continue-on-error: true/, 'PR creation failure does not prevent fallback reporting');
+assert.match(weeklyWorkflow, /if: steps\.open-pr\.outcome == 'failure'[\s\S]*GITHUB_STEP_SUMMARY/, 'blocked PR creation is explicitly reported in the job summary');
+assert.match(weeklyWorkflow, /pull-requests:\s*write/, 'the workflow declares PR write permission');
+
+console.log('PASS: Arabic RTL, local persistence, 8 A1 steps, accessible feedback, responsive layout, standalone source, and weekly-review artifact fallback');
