@@ -105,6 +105,12 @@ for (const value of corruptStates) {
   assert.equal(app.elements.get('score-label').textContent, 'الإجابات الصحيحة: 0', 'invalid state cannot inject a score');
 }
 
+const corruptWithTimestamp = boot(JSON.stringify({
+  version: 1, step: 99, score: 99, answered: true, selectedChoice: 0,
+  updatedAt: '2026-11-20T00:00:00.000Z'
+}));
+assert.equal(corruptWithTimestamp.elements.get('saved').textContent, 'لم تحفظ أي إجابات بعد.', 'invalid state is not presented as a valid saved session');
+
 const completed = boot(JSON.stringify({
   version: 1, step: 8, score: 6, answered: false, selectedChoice: null,
   completed: true, updatedAt: '2026-11-20T00:00:00.000Z'
