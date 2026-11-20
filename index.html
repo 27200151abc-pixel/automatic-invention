@@ -28,29 +28,30 @@ const lessons=[
 ];
 let index=0,score=0,answered=false,selectedChoice=null;const $=id=>document.getElementById(id);
 function saved(){try{return JSON.parse(localStorage.getItem('verbasprout-progress')||'{}')}catch{return {}}}function restoreProgress(data){
-const empty={step:0,score:0,answered:false,selectedChoice:null};
+const empty={step:0,score:0,answered:false,selectedChoice:null,updatedAt:null};
 if(!data||typeof data!=='object'||Array.isArray(data))return empty;
 if(data.version!==undefined&&data.version!==1)return empty;
 const step=data.step,score=data.score;
 if(!Number.isInteger(step)||step<0||step>lessons.length||!Number.isInteger(score)||score<0||score>lessons.length)return empty;
+const state=(answered,selectedChoice)=>({step,score,answered,selectedChoice,updatedAt:typeof data.updatedAt==='string'&&Number.isFinite(Date.parse(data.updatedAt))?data.updatedAt:null});
 if(data.version===undefined){
 if(score>Math.min(step+1,lessons.length))return empty;
-if(step<lessons.length&&score===step+1)return {step,score,answered:true,selectedChoice:lessons[step].correct};
-return {step,score,answered:false,selectedChoice:null};
+if(step<lessons.length&&score===step+1)return state(true,lessons[step].correct);
+return state(false,null);
 }
-if(step===lessons.length)return {step,score,answered:false,selectedChoice:null};
+if(step===lessons.length)return state(false,null);
 if(data.answered===true){
 const choice=data.selectedChoice;
 if(!Number.isInteger(choice)||choice<0||choice>=lessons[step].a.length)return empty;
 const correct=choice===lessons[step].correct;
 if(score>(step+(correct?1:0))||score<(correct?1:0))return empty;
-return {step,score,answered:true,selectedChoice:choice};
+return state(true,choice);
 }
 if(score>step)return empty;
-return {step,score,answered:false,selectedChoice:null};
+return state(false,null);
 }
 function persist(){const data={version:1,step:index,score,completed:index>=lessons.length,answered,selectedChoice,updatedAt:new Date().toISOString()};try{localStorage.setItem('verbasprout-progress',JSON.stringify(data))}catch{};renderSaved()}
-function renderSaved(){const d=saved();$('saved').textContent=d.updatedAt?'آخر حفظ: '+new Date(d.updatedAt).toLocaleString('ar')+' — '+(d.completed?'أكملت الدرس':'الخطوة '+Math.min((d.step||0)+1,lessons.length)+' من 8')+'، النتيجة '+(d.score||0)+'/8':'لم تحفظ أي إجابات بعد.'}
+function renderSaved(){const d=restoreProgress(saved());$('saved').textContent=d.updatedAt?'آخر حفظ: '+new Date(d.updatedAt).toLocaleString('ar')+' — '+(d.step>=lessons.length?'أكملت الدرس':'الخطوة '+(d.step+1)+' من 8')+'، النتيجة '+d.score+'/8':'لم تحفظ أي إجابات بعد.'}
 function render(){answered=false;$('feedback').textContent='';$('next').disabled=true;$('answers').replaceChildren();$('step-label').textContent=index<lessons.length?'الخطوة '+(index+1)+' من '+lessons.length:'اكتمل الدرس';$('score-label').textContent='الإجابات الصحيحة: '+score;$('progress').style.width=(index/lessons.length*100)+'%';document.querySelector('[role=progressbar]').setAttribute('aria-valuenow',index);
 if(index>=lessons.length){$('lesson-title').textContent='أحسنت! أكملت الدرس 🎉';$('question').textContent='نتيجتك '+score+' من '+lessons.length+'. أعد الدرس للتدريب مرة أخرى.';$('next').hidden=true;return}
 $('next').hidden=false;const l=lessons[index];$('lesson-title').textContent='تدريب A1';$('question').textContent=l.q;l.a.forEach((a,i)=>{const b=document.createElement('button');b.textContent=a;b.addEventListener('click',()=>choose(i,b));$('answers').append(b)})}
