@@ -11,6 +11,8 @@ assert.equal((html.match(/\{q:'/g) || []).length, 8, 'eight A1 lesson steps');
 assert.equal((html.match(/pronunciation:'/g) || []).length, 8, 'every A1 item has an explicit pronunciation phrase');
 assert.match(html, /id="listen"/, 'visible pronunciation control exists');
 assert.match(html, /utterance\.lang='en-US'/, 'English pronunciation language is set');
+assert.match(html, /document\.addEventListener\('visibilitychange'/, 'speech stops when the document becomes hidden');
+assert.match(html, /window\.addEventListener\('pagehide'/, 'speech stops when the page is left');
 assert.match(html, /role="status"/, 'accessible feedback region');
 assert.match(html, /@media|auto-fit/, 'responsive layout');
 assert.doesNotMatch(html, /<script[^>]+src=/i, 'no external script dependencies');
@@ -35,7 +37,11 @@ function bootApp(supported) {
     setAttribute(name, value) { this.attributes[name] = value; }
   });
   const progress = makeElement();
+  const documentListeners = Object.create(null);
+  const windowListeners = Object.create(null);
   const document = {
+    hidden: false,
+    addEventListener(name, callback) { documentListeners[name] = callback; },
     getElementById(id) { return elements[id] || (elements[id] = makeElement()); },
     querySelector() { return progress; },
     createElement() { return makeElement(); }
@@ -53,12 +59,19 @@ function bootApp(supported) {
   const context = {
     document,
     localStorage: storage,
-    window: { speechSynthesis },
+    window: {
+      speechSynthesis,
+      addEventListener(name, callback) { windowListeners[name] = callback; }
+    },
     SpeechSynthesisUtterance: supported ? FakeUtterance : undefined,
     Date
   };
   vm.runInNewContext(scriptMatch[1], context);
-  return { elements, utterances, get cancelCalls() { return cancelCalls; } };
+  return {
+    elements, utterances, documentListeners, windowListeners,
+    setDocumentHidden(value) { document.hidden = value; },
+    get cancelCalls() { return cancelCalls; }
+  };
 }
 
 const supported = bootApp(true);
@@ -77,4 +90,18 @@ const unsupported = bootApp(false);
 unsupported.elements.listen.listeners.click();
 assert.match(unsupported.elements.feedback.textContent, /غير متاحة في هذا المتصفح/, 'unsupported browsers receive a clear fallback');
 
-console.log('PASS: Arabic RTL, local persistence, 8 A1 items, accessible feedback, responsive layout, and native pronunciation behavior/fallback');
+const lifecycle = bootApp(true);
+lifecycle.elements.listen.listeners.click();
+assert.equal(lifecycle.cancelCalls, 1, 'starting pronunciation clears any queued speech');
+lifecycle.setDocumentHidden(false);
+lifecycle.documentListeners.visibilitychange();
+assert.equal(lifecycle.cancelCalls, 1, 'speech continues while the document remains visible');
+lifecycle.setDocumentHidden(true);
+lifecycle.documentListeners.visibilitychange();
+assert.equal(lifecycle.cancelCalls, 2, 'hiding the document cancels speech');
+lifecycle.elements.listen.listeners.click();
+assert.equal(lifecycle.cancelCalls, 3, 'pronunciation can be started again after returning');
+lifecycle.windowListeners.pagehide();
+assert.equal(lifecycle.cancelCalls, 4, 'leaving the page cancels speech');
+
+console.log('PASS: Arabic RTL, local persistence, 8 A1 items, accessible feedback, responsive layout, native pronunciation, hidden-tab and page-exit cancellation');
