@@ -36,17 +36,24 @@ self.addEventListener('fetch', event => {
 
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
+      const cachedShell = async () =>
+        (await caches.match(request)) ||
+        (await caches.match(APP_ROOT.href)) ||
+        (await caches.match(INDEX_URL));
+
       try {
         const response = await fetch(request);
         if (response.ok) {
           const cache = await caches.open(CACHE_NAME);
           await cache.put(INDEX_URL, response.clone());
+          return response;
         }
-        return response;
+
+        // A reachable server can still return a transient 404/5xx page.
+        // Prefer the last known-good lesson shell when one is available.
+        return (await cachedShell()) || response;
       } catch {
-        return (await caches.match(request)) ||
-          (await caches.match(APP_ROOT.href)) ||
-          (await caches.match(INDEX_URL)) ||
+        return (await cachedShell()) ||
           new Response('VerbaSprout is offline. Open the app once while online to prepare it.', {
             status: 503,
             headers: { 'content-type': 'text/plain; charset=utf-8' }
