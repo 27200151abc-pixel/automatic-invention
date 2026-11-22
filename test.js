@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('node:fs');
 const assert = require('node:assert/strict');
+const vm = require('node:vm');
 const progressStore = require('./progress-store.js');
 const html = fs.readFileSync('index.html', 'utf8');
 assert.match(html, /<html lang="ar" dir="rtl">/, 'Arabic RTL document');
@@ -32,6 +33,7 @@ assert.ok(html.includes("serviceWorker.register('./sw.js')"), 'service worker re
 assert.ok(worker.includes('self.registration.scope'), 'worker caches within its deployed subpath');
 assert.ok(worker.includes("request.mode === 'navigate'"), 'worker has offline navigation fallback');
 assert.ok(worker.includes('caches.match'), 'worker reads cached shell when offline');
+assert.ok(worker.includes('return (await cachedShell()) || response;'), 'worker falls back to the cached shell for non-OK navigation responses');
 assert.match(icon, /<svg/, 'local SVG icon exists');
 for (const file of ['manifest.webmanifest', 'sw.js', 'icon.svg', 'progress-store.js']) {
   assert.ok(deploy.includes('cp ' + file + ' _site/' + file), 'Pages deploy includes ' + file);
@@ -52,3 +54,90 @@ assert.ok(worker.includes("new URL('progress-store.js', APP_ROOT).href"), 'progr
 assert.ok(deploy.includes('cp progress-store.js _site/progress-store.js'), 'Pages artifact includes progress module');
 console.log('PASS: progress restoration, legacy migration, corrupt/out-of-range data handling');
 console.log('PASS: Arabic RTL, local persistence, 8 A1 steps, accessible feedback, responsive layout, standalone source');
+
+async function runServiceWorkerNavigationTests() {
+  const appRoot = 'https://example.test/verbasprout/';
+  const indexUrl = appRoot + 'index.html';
+  const workerSource = fs.readFileSync('sw.js', 'utf8');
+
+  async function requestNavigation({ networkResponse, networkError, cachedRoot = true, cachedIndex = true }) {
+    const handlers = {};
+    const cacheEntries = new Map();
+    if (cachedRoot) cacheEntries.set(appRoot, new Response('cached app shell', { status: 200 }));
+    if (cachedIndex) cacheEntries.set(indexUrl, new Response('cached index', { status: 200 }));
+
+    const cache = {
+      async addAll() {},
+      async put(key, value) { cacheEntries.set(key, value); }
+    };
+    const caches = {
+      async open() { return cache; },
+      async match(key) {
+        const url = typeof key === 'string' ? key : key.url;
+        const value = cacheEntries.get(url);
+        return value ? value.clone() : undefined;
+      },
+      async keys() { return []; },
+      async delete() { return true; }
+    };
+    const self = {
+      registration: { scope: appRoot },
+      location: { origin: 'https://example.test' },
+      clients: { async claim() {} },
+      async skipWaiting() {},
+      addEventListener(type, handler) { handlers[type] = handler; }
+    };
+    vm.runInNewContext(workerSource, {
+      self, caches, URL, Response, Promise,
+      fetch: async () => {
+        if (networkError) throw networkError;
+        return networkResponse;
+      }
+    });
+
+    let responsePromise;
+    handlers.fetch({
+      request: { method: 'GET', mode: 'navigate', url: appRoot },
+      respondWith(value) { responsePromise = value; }
+    });
+    return { response: await responsePromise, cacheEntries };
+  }
+
+  const serverUnavailable = await requestNavigation({
+    networkResponse: new Response('temporary server error', { status: 503 })
+  });
+  assert.equal(serverUnavailable.response.status, 200, 'cached app shell replaces a transient 503 navigation response');
+  assert.equal(await serverUnavailable.response.text(), 'cached app shell');
+
+  const notFound = await requestNavigation({
+    networkResponse: new Response('not found', { status: 404 }),
+    cachedRoot: false,
+    cachedIndex: true
+  });
+  assert.equal(notFound.response.status, 200, 'cached index replaces a non-OK navigation response when root cache is absent');
+  assert.equal(await notFound.response.text(), 'cached index');
+
+  const offline = await requestNavigation({ networkError: new Error('network offline') });
+  assert.equal(offline.response.status, 200, 'offline navigation still uses the cached app shell');
+  assert.equal(await offline.response.text(), 'cached app shell');
+
+  const fresh = await requestNavigation({
+    networkResponse: new Response('fresh app shell', { status: 200 })
+  });
+  assert.equal(await fresh.response.text(), 'fresh app shell', 'successful network navigation remains preferred');
+  assert.ok(fresh.cacheEntries.has(indexUrl), 'successful navigation refreshes the cached index');
+
+  const noFallback = await requestNavigation({
+    networkResponse: new Response('not found', { status: 404 }),
+    cachedRoot: false,
+    cachedIndex: false
+  });
+  assert.equal(noFallback.response.status, 404, 'server error is preserved when no cached shell exists');
+
+  console.log('PASS: service-worker navigation fallback for HTTP errors, offline failures, and cache refresh');
+}
+
+runServiceWorkerNavigationTests().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});
