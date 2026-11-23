@@ -7,6 +7,8 @@ assert.match(html, /verbasprout-progress/, 'local progress persistence');
 assert.match(html, /const lessons=\[/, 'lesson data exists');
 assert.equal((html.match(/\{q:'/g) || []).length, 8, 'eight A1 lesson steps');
 assert.match(html, /role="status"/, 'accessible feedback region');
+assert.match(html, /<p id="question"><\/p>/, 'question has a stable label target');
+assert.match(html, /<div id="answers" class="answers" role="group" aria-labelledby="question">/, 'answer choices are grouped and named by the current question');
 assert.match(html, /@media|auto-fit/, 'responsive layout');
 assert.doesNotMatch(html, /<script[^>]+src=/i, 'no external script dependencies');
 assert.doesNotMatch(html, /lisanora/i, 'no Lisanora integration');
