@@ -7,6 +7,7 @@ assert.match(html, /verbasprout-progress/, 'local progress persistence');
 assert.match(html, /const lessons=\[/, 'lesson data exists');
 assert.equal((html.match(/\{q:'/g) || []).length, 8, 'eight A1 lesson steps');
 assert.match(html, /role="status"/, 'accessible feedback region');
+assert.match(html, /const b=document\.createElement\('button'\);b\.lang='en';/, 'English answer buttons declare lang=en');
 assert.match(html, /@media|auto-fit/, 'responsive layout');
 assert.doesNotMatch(html, /<script[^>]+src=/i, 'no external script dependencies');
 assert.doesNotMatch(html, /lisanora/i, 'no Lisanora integration');
