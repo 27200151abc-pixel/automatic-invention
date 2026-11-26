@@ -28,12 +28,27 @@ const lessons=[
 ];
 let index=0,score=0,answered=false;const $=id=>document.getElementById(id);
 function saved(){try{return JSON.parse(localStorage.getItem('verbasprout-progress')||'{}')}catch{return {}}}
+function renderMixedLanguageText(target,text){
+ target.replaceChildren();
+ const pattern=/[A-Za-z][A-Za-z0-9’'-]*(?:[ \t]+[A-Za-z][A-Za-z0-9’'-]*)*/g;
+ let cursor=0;
+ for(const match of text.matchAll(pattern)){
+  if(match.index>cursor)target.append(document.createTextNode(text.slice(cursor,match.index)));
+  const english=document.createElement('span');
+  english.lang='en';
+  english.dir='ltr';
+  english.textContent=match[0];
+  target.append(english);
+  cursor=match.index+match[0].length;
+ }
+ if(cursor<text.length)target.append(document.createTextNode(text.slice(cursor)));
+}
 function persist(){const data={step:index,score,completed:index>=lessons.length,updatedAt:new Date().toISOString()};try{localStorage.setItem('verbasprout-progress',JSON.stringify(data))}catch{};renderSaved()}
 function renderSaved(){const d=saved();$('saved').textContent=d.updatedAt?'آخر حفظ: '+new Date(d.updatedAt).toLocaleString('ar')+' — '+(d.completed?'أكملت الدرس':'الخطوة '+Math.min((d.step||0)+1,lessons.length)+' من 8')+'، النتيجة '+(d.score||0)+'/8':'لم تحفظ أي إجابات بعد.'}
 function render(){answered=false;$('feedback').textContent='';$('next').disabled=true;$('answers').replaceChildren();$('step-label').textContent=index<lessons.length?'الخطوة '+(index+1)+' من '+lessons.length:'اكتمل الدرس';$('score-label').textContent='الإجابات الصحيحة: '+score;$('progress').style.width=(index/lessons.length*100)+'%';document.querySelector('[role=progressbar]').setAttribute('aria-valuenow',index);
 if(index>=lessons.length){$('lesson-title').textContent='أحسنت! أكملت الدرس 🎉';$('question').textContent='نتيجتك '+score+' من '+lessons.length+'. أعد الدرس للتدريب مرة أخرى.';$('next').hidden=true;return}
-$('next').hidden=false;const l=lessons[index];$('lesson-title').textContent='تدريب A1';$('question').textContent=l.q;l.a.forEach((a,i)=>{const b=document.createElement('button');b.textContent=a;b.addEventListener('click',()=>choose(i,b));$('answers').append(b)})}
-function choose(choice,button){if(answered)return;answered=true;const l=lessons[index],buttons=[...$('answers').children];buttons.forEach((b,i)=>{b.disabled=true;if(i===l.correct)b.style.borderColor='#27856a'});if(choice===l.correct){score++;$('feedback').textContent='إجابة صحيحة! '+l.why}else{$('feedback').textContent='ليست الإجابة الصحيحة. '+l.why;button.style.borderColor='#c65b50'}$('score-label').textContent='الإجابات الصحيحة: '+score;$('next').disabled=false;persist()}
+$('next').hidden=false;const l=lessons[index];$('lesson-title').textContent='تدريب A1';renderMixedLanguageText($('question'),l.q);l.a.forEach((a,i)=>{const b=document.createElement('button');b.textContent=a;b.addEventListener('click',()=>choose(i,b));$('answers').append(b)})}
+function choose(choice,button){if(answered)return;answered=true;const l=lessons[index],buttons=[...$('answers').children];buttons.forEach((b,i)=>{b.disabled=true;if(i===l.correct)b.style.borderColor='#27856a'});if(choice===l.correct){score++;renderMixedLanguageText($('feedback'),'إجابة صحيحة! '+l.why)}else{renderMixedLanguageText($('feedback'),'ليست الإجابة الصحيحة. '+l.why);button.style.borderColor='#c65b50'}$('score-label').textContent='الإجابات الصحيحة: '+score;$('next').disabled=false;persist()}
 $('next').addEventListener('click',()=>{if(!answered)return;index++;persist();render()});$('reset').addEventListener('click',()=>{index=0;score=0;try{localStorage.removeItem('verbasprout-progress')}catch{};renderSaved();render()});renderSaved();render();
 })();
 </script></body></html>
