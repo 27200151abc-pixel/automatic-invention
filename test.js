@@ -11,7 +11,7 @@ assert.match(html, /@media|auto-fit/, 'responsive layout');
 assert.doesNotMatch(html, /<script[^>]+src=/i, 'no external script dependencies');
 assert.doesNotMatch(html, /lisanora/i, 'no Lisanora integration');
 
-const forcedColorsBlock = html.match(/@media\\s*\\(forced-colors:\\s*active\\)\\s*\\{([\\s\\S]*?)<\\/style>/);
+const forcedColorsBlock = html.match(/@media\s*\(forced-colors:\s*active\)\s*\{([\s\S]*?)<\/style>/);
 assert.ok(forcedColorsBlock, 'forced-colors fallback exists');
 for (const declaration of [
   'background:Highlight',
@@ -24,4 +24,4 @@ for (const declaration of [
   assert.ok(forcedColorsBlock[1].includes(declaration), 'forced-colors declaration: ' + declaration);
 }
 
-console.log('PASS: Arabic RTL, local persistence, 8 A1 steps, accessible feedback, responsive layout, standalone source');
+console.log('PASS: Arabic RTL, local persistence, 8 A1 steps, accessible feedback, responsive layout, forced-colors support, standalone source');
