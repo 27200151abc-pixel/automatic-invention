@@ -10,7 +10,7 @@ assert.match(html, /role="status"/, 'accessible feedback region');
 assert.match(html, /@media|auto-fit/, 'responsive layout');
 assert.doesNotMatch(html, /<script[^>]+src=/i, 'no external script dependencies');
 assert.doesNotMatch(html, /lisanora/i, 'no Lisanora integration');
-const noScript = html.match(/<noscript>([\\s\\S]*?)<\\/noscript>/i);
+const noScript = html.match(/<noscript>([\s\S]*?)<\/noscript>/i);
 assert.ok(noScript, 'clear no-JavaScript fallback exists');
 assert.match(noScript[1], /فعّل JavaScript/, 'fallback explains that JavaScript is required');
 assert.match(noScript[1], /أعد تحميل الصفحة/, 'fallback tells learners how to continue');
